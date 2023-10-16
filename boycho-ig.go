@@ -31,7 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	window, err = sdl.CreateWindow("Input", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 1600, 900, sdl.WINDOW_SHOWN)
+	window, err = sdl.CreateWindow("Input", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 1600, 900, sdl.WINDOW_FULLSCREEN)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -83,15 +83,27 @@ func main() {
 					}
 					if keyCode == sdl.K_a {
 						centerTile.move(-1, 0)
+						if !equalPosition(centerTile.position, visibleEntities) {
+							centerTile.move(1, 0)
+						}
 					}
 					if keyCode == sdl.K_d {
 						centerTile.move(1, 0)
+						if !equalPosition(centerTile.position, visibleEntities) {
+							centerTile.move(-1, 0)
+						}
 					}
 					if keyCode == sdl.K_w {
 						centerTile.move(0, -1)
+						if !equalPosition(centerTile.position, visibleEntities) {
+							centerTile.move(0, 1)
+						}
 					}
 					if keyCode == sdl.K_s {
 						centerTile.move(0, 1)
+						if !equalPosition(centerTile.position, visibleEntities) {
+							centerTile.move(0, -1)
+						}
 					}
 					fmt.Println(centerTile.position.x, " ", centerTile.position.y)
 				}
@@ -154,10 +166,20 @@ func (tile *Tile) render(renderer *sdl.Renderer, displayRect *sdl.Rect) {
 }
 
 type Visible interface {
+	getPosition() Position
 	render(renderer *sdl.Renderer, displayRect *sdl.Rect)
 }
 
 type Position struct {
 	x int32
 	y int32
+}
+
+func equalPosition(position Position, array []Visible) bool {
+	for _, entity := range array {
+		if position.x == entity.getPosition().x && position.y == entity.getPosition().y {
+			return true
+		}
+	}
+	return false
 }
