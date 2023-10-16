@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-const (
-	TILE_HEIGHT int32 = TILE_WIDTH * 9 / 28
-	TILE_WIDTH  int32 = 56
-)
+var WINDOW_WIDTH,
+	WINDOW_HEIGHT,
+	TILE_HEIGHT,
+	TILE_WIDTH int32
 
 func main() {
 	runtime.LockOSThread()
@@ -31,7 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	window, err = sdl.CreateWindow("Input", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 1600, 900, sdl.WINDOW_FULLSCREEN)
+	window, err = sdl.CreateWindow("Input", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 1600, 900, sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -41,6 +41,9 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	WINDOW_WIDTH, WINDOW_HEIGHT = window.GetSize()
+	TILE_WIDTH, TILE_HEIGHT = 112, 36
 	tex, _ := img.LoadTexture(renderer, "./res/img/tile.png")
 	tex2, _ := img.LoadTexture(renderer, "./res/img/tile.png")
 	tex.SetColorMod(148, 169, 255)
@@ -58,13 +61,12 @@ func main() {
 	var visibleEntities []Visible
 	for i := 0; i < 9; i++ {
 		for j := 0; j < 36; j++ {
-			tile := createTile(int32(i), int32(j), TILE_WIDTH, TILE_HEIGHT, tex)
+			tile := createTile(int32(i), int32(j), tex)
 			visibleEntities = append(visibleEntities, &tile)
 		}
 	}
 
-	centerTile := createTile(4, 20, TILE_WIDTH, TILE_HEIGHT, tex2)
-
+	centerTile := createTile(4, 18, tex2)
 	running := true
 	for running {
 		startTime = time.Now()
@@ -80,26 +82,18 @@ func main() {
 						os.Exit(1)
 					}
 					if keyCode == sdl.K_a {
-						for _, entity := range visibleEntities {
-							entity.movePos(TILE_WIDTH/2, -TILE_HEIGHT)
-						}
+						centerTile.move(-1, 0)
 					}
 					if keyCode == sdl.K_d {
-						for _, entity := range visibleEntities {
-							entity.movePos(-TILE_WIDTH/2, TILE_HEIGHT)
-						}
+						centerTile.move(1, 0)
 					}
 					if keyCode == sdl.K_w {
-						for _, entity := range visibleEntities {
-							entity.movePos(TILE_WIDTH/2, TILE_HEIGHT)
-						}
+						centerTile.move(0, -1)
 					}
 					if keyCode == sdl.K_s {
-						for _, entity := range visibleEntities {
-							entity.movePos(-TILE_WIDTH/2, -TILE_HEIGHT)
-						}
+						centerTile.move(0, 1)
 					}
-					fmt.Println("(", -visibleEntities[0].getX()/TILE_WIDTH, ", ", visibleEntities[0].getY()/TILE_HEIGHT, ")")
+					fmt.Println(centerTile.position.x, " ", centerTile.position.y)
 				}
 				if t.State == sdl.RELEASED {
 
@@ -131,35 +125,28 @@ func main() {
 }
 
 type Tile struct {
-	x, y, w, h int32
-	tex        *sdl.Texture
+	position Position
+	tex      *sdl.Texture
 }
 
-func createTile(x int32, y int32, w int32, h int32, tex *sdl.Texture) Tile {
-	return Tile{x*TILE_WIDTH + TILE_WIDTH/2 + (y % 2 * TILE_WIDTH / 2), y*TILE_HEIGHT + TILE_HEIGHT, w, h, tex}
+func createTile(x int32, y int32, tex *sdl.Texture) Tile {
+	return Tile{Position{x, y}, tex}
 }
-func (tile *Tile) getX() (x int32) {
-	return tile.x
+func (tile *Tile) getPosition() Position {
+	return tile.position
 }
-func (tile *Tile) getY() (y int32) {
-	return tile.y
-}
-func (tile *Tile) setPos(x int32, y int32) {
-	tile.x = x
-	tile.y = y
-}
-func (tile *Tile) movePos(dx int32, dy int32) {
-	tile.x += dx
-	tile.y += dy
+func (tile *Tile) move(x int32, y int32) {
+	tile.position.x += x
+	tile.position.y += y
 }
 func (tile *Tile) render(renderer *sdl.Renderer, displayRect *sdl.Rect) {
 	if tile.tex == nil || renderer == nil {
 		os.Exit(5)
 	}
-	displayRect.X = tile.x - tile.w/2
-	displayRect.Y = tile.y - tile.h/2
-	displayRect.W = tile.w
-	displayRect.H = tile.h
+	displayRect.X = tile.position.x*TILE_WIDTH/2 + tile.position.y*TILE_WIDTH/2
+	displayRect.Y = tile.position.y*TILE_HEIGHT/2 - tile.position.x*TILE_HEIGHT/2
+	displayRect.W = TILE_WIDTH
+	displayRect.H = TILE_HEIGHT
 	err := renderer.Copy(tile.tex, nil, displayRect)
 	if err != nil {
 		return
@@ -167,9 +154,10 @@ func (tile *Tile) render(renderer *sdl.Renderer, displayRect *sdl.Rect) {
 }
 
 type Visible interface {
-	getX() (x int32)
-	getY() (y int32)
-	setPos(x int32, y int32)
-	movePos(dx int32, dy int32)
 	render(renderer *sdl.Renderer, displayRect *sdl.Rect)
+}
+
+type Position struct {
+	x int32
+	y int32
 }
