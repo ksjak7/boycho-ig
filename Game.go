@@ -26,7 +26,7 @@ func InitializeGame() *Game {
 	if game.err != nil {
 		return nil
 	}
-	game.window, game.err = sdl.CreateWindow("Input", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 1600, 900, sdl.WINDOW_FULLSCREEN)
+	game.window, game.err = sdl.CreateWindow("Input", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 1600, 900, sdl.WINDOW_SHOWN)
 	if game.err != nil {
 		fmt.Println(game.err)
 		os.Exit(1)

@@ -49,7 +49,6 @@ func main() {
 		for _, entityJ := range allTiles {
 			xDistance := int(math.Abs(float64(entity.position.x) - float64(entityJ.position.x)))
 			yDistance := int(math.Abs(float64(entity.position.y) - float64(entityJ.position.y)))
-			//fmt.Println(entity.position, entityJ.position, xDistance, yDistance)
 			if entity != entityJ && !entity.withinAdjacentTiles(entityJ) && ((xDistance == 1 && yDistance == 0) || (xDistance == 0 && yDistance == 1)) {
 				fmt.Println(xDistance, " ", yDistance)
 				entity.adjacentTiles = append(entity.adjacentTiles, entityJ)
@@ -57,9 +56,12 @@ func main() {
 		}
 		visibleEntities = append(visibleEntities, entity)
 	}
+	start, end := allTiles[0], allTiles[17]
+	parent, _ := shortestPath(start, end)
 
-	for _, entity := range allTiles {
-		fmt.Println(len(entity.adjacentTiles))
+	for end != nil {
+		end.texture = game.SELECTED_TILE_TEXTURE
+		end = parent[end]
 	}
 
 	running := true
