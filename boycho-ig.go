@@ -4,20 +4,14 @@ import (
 	"fmt"
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
+	"math"
 	"os"
 	"runtime"
 	"time"
 )
 
-var WINDOW_WIDTH,
-	WINDOW_HEIGHT,
-	TILE_HEIGHT,
-	TILE_WIDTH int32
-
 func main() {
 	runtime.LockOSThread()
-	var window *sdl.Window
-	var renderer *sdl.Renderer
 	var err error
 
 	err = sdl.Init(sdl.INIT_EVERYTHING)
@@ -31,23 +25,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	window, err = sdl.CreateWindow("Input", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 1600, 900, sdl.WINDOW_FULLSCREEN)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	game := InitializeGame()
 
-	WINDOW_WIDTH, WINDOW_HEIGHT = window.GetSize()
-	TILE_WIDTH, TILE_HEIGHT = 112, 36
-	tex, _ := img.LoadTexture(renderer, "./res/img/tile.png")
-	tex2, _ := img.LoadTexture(renderer, "./res/img/tile.png")
-	tex.SetColorMod(148, 169, 255)
-	tex2.SetColorMod(0, 0, 0)
 	var displayRect sdl.Rect = sdl.Rect{
 		X: 0,
 		Y: 0,
@@ -59,14 +38,29 @@ func main() {
 	var frameTime int64
 
 	var visibleEntities []Visible
-	for i := 0; i < 9; i++ {
-		for j := 0; j < 36; j++ {
-			tile := createTile(int32(i), int32(j), tex)
-			visibleEntities = append(visibleEntities, &tile)
+	var allTiles []*Tile
+	for i := -4; i < 5; i++ {
+		for j := -4; j < 5; j++ {
+			tile := createTile(int32(i), int32(j), game.TILE_TEXTURE, game)
+			allTiles = append(allTiles, &tile)
 		}
 	}
+	for _, entity := range allTiles {
+		for _, entityJ := range allTiles {
+			xDistance := int(math.Abs(float64(entity.position.x) - float64(entityJ.position.x)))
+			yDistance := int(math.Abs(float64(entity.position.y) - float64(entityJ.position.y)))
+			//fmt.Println(entity.position, entityJ.position, xDistance, yDistance)
+			if entity != entityJ && (!(xDistance <= 1.0 && yDistance <= 1.0) && (xDistance <= 1.0 || yDistance <= 1.0)) && !entity.withinAdjacentTiles(entityJ) {
+				entity.adjacentTiles = append(entity.adjacentTiles, entityJ)
+			}
+		}
+		visibleEntities = append(visibleEntities, entity)
+	}
 
-	centerTile := createTile(4, 18, tex2)
+	for _, entity := range allTiles {
+		fmt.Println(len(entity.adjacentTiles))
+	}
+
 	running := true
 	for running {
 		startTime = time.Now()
@@ -82,30 +76,17 @@ func main() {
 						os.Exit(1)
 					}
 					if keyCode == sdl.K_a {
-						centerTile.move(-1, 0)
-						if !equalPosition(centerTile.position, visibleEntities) {
-							centerTile.move(1, 0)
-						}
+
 					}
 					if keyCode == sdl.K_d {
-						centerTile.move(1, 0)
-						if !equalPosition(centerTile.position, visibleEntities) {
-							centerTile.move(-1, 0)
-						}
+
 					}
 					if keyCode == sdl.K_w {
-						centerTile.move(0, -1)
-						if !equalPosition(centerTile.position, visibleEntities) {
-							centerTile.move(0, 1)
-						}
+
 					}
 					if keyCode == sdl.K_s {
-						centerTile.move(0, 1)
-						if !equalPosition(centerTile.position, visibleEntities) {
-							centerTile.move(0, -1)
-						}
+
 					}
-					fmt.Println(centerTile.position.x, " ", centerTile.position.y)
 				}
 				if t.State == sdl.RELEASED {
 
@@ -113,73 +94,28 @@ func main() {
 			}
 		}
 
-		err = renderer.SetDrawColor(156, 156, 156, 0)
+		err = game.renderer.SetDrawColor(156, 156, 156, 0)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		renderer.Clear()
+		game.renderer.Clear()
 		for _, entity := range visibleEntities {
-			entity.render(renderer, &displayRect)
+			entity.render(game.renderer, &displayRect)
 		}
-		centerTile.render(renderer, &displayRect)
-		renderer.Present()
+		game.renderer.Present()
 
 		frameTime = time.Now().Sub(startTime).Milliseconds()
 		if frameTime <= 16 {
 			sdl.Delay(uint32(16 - frameTime))
 		}
 	}
-	if err := window.Destroy(); err != nil {
+	if err := game.window.Destroy(); err != nil {
 		os.Exit(1)
 	}
 }
 
-type Tile struct {
-	position Position
-	tex      *sdl.Texture
-}
-
-func createTile(x int32, y int32, tex *sdl.Texture) Tile {
-	return Tile{Position{x, y}, tex}
-}
-func (tile *Tile) getPosition() Position {
-	return tile.position
-}
-func (tile *Tile) move(x int32, y int32) {
-	tile.position.x += x
-	tile.position.y += y
-}
-func (tile *Tile) render(renderer *sdl.Renderer, displayRect *sdl.Rect) {
-	if tile.tex == nil || renderer == nil {
-		os.Exit(5)
-	}
-	displayRect.X = tile.position.x*TILE_WIDTH/2 + tile.position.y*TILE_WIDTH/2
-	displayRect.Y = tile.position.y*TILE_HEIGHT/2 - tile.position.x*TILE_HEIGHT/2
-	displayRect.W = TILE_WIDTH
-	displayRect.H = TILE_HEIGHT
-	err := renderer.Copy(tile.tex, nil, displayRect)
-	if err != nil {
-		return
-	}
-}
-
 type Visible interface {
-	getPosition() Position
 	render(renderer *sdl.Renderer, displayRect *sdl.Rect)
-}
-
-type Position struct {
-	x int32
-	y int32
-}
-
-func equalPosition(position Position, array []Visible) bool {
-	for _, entity := range array {
-		if position.x == entity.getPosition().x && position.y == entity.getPosition().y {
-			return true
-		}
-	}
-	return false
 }
