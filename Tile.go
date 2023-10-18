@@ -15,11 +15,10 @@ type Tile struct {
 	game          *Game
 	adjacentTiles []*Tile
 	cost          float64
-	priority      float64
 }
 
-func createTile(x int32, y int32, texture *sdl.Texture, game *Game) Tile {
-	return Tile{Position{x, y}, texture, game.TILE_WIDTH, game.TILE_HEIGHT, game, []*Tile{}, 1, 0}
+func createTile(x int32, y int32, texture *sdl.Texture, cost float64, game *Game) Tile {
+	return Tile{Position{x, y}, texture, game.TILE_WIDTH, game.TILE_HEIGHT, game, []*Tile{}, cost}
 }
 func (tile *Tile) getPosition() Position {
 	return tile.position
@@ -49,31 +48,22 @@ func shortestPath(start *Tile, end *Tile) (map[*Tile]*Tile, map[*Tile]float64) {
 	currentCost := map[*Tile]float64{}
 	parent[start] = nil
 	currentCost[start] = 0
-	currentIndex := 0
 
 	for len(openList) > 0 {
-		for index, entity := range openList {
-			if entity.priority < current.priority {
-				current = entity
-				openList[currentIndex] = openList[len(openList)-1]
-				openList = openList[:len(openList)-1]
-				currentIndex = index
-			}
-		}
 		current = openList[0]
-		openList[0] = openList[len(openList)-1]
-		openList = openList[:len(openList)-1]
+		openList = openList[1:]
 
 		if current == end {
 			return parent, currentCost
 		}
 
 		for _, child := range current.adjacentTiles {
-			new_cost := currentCost[current] + child.cost
-			if !childInKeys(child, currentCost) || new_cost < currentCost[child] {
+			new_cost := currentCost[current] + child.cost + child.heuristic(end)
+			if !childInKeys(child, currentCost) || new_cost <= currentCost[child] {
 				currentCost[child] = new_cost
-				child.priority = new_cost + child.heuristic(end)
-				openList = append(openList, child)
+				if !child.inSlice(openList) {
+					openList = append(openList, child)
+				}
 				parent[child] = current
 			}
 		}
@@ -81,6 +71,8 @@ func shortestPath(start *Tile, end *Tile) (map[*Tile]*Tile, map[*Tile]float64) {
 	}
 	return parent, currentCost
 }
+
+//my heuristic is the estimated  *direct distance to the point
 
 func (tile *Tile) withinAdjacentTiles(foreignTile *Tile) bool {
 	for _, entity := range tile.adjacentTiles {
@@ -101,6 +93,15 @@ func childInKeys(tile *Tile, costMap map[*Tile]float64) bool {
 }
 
 func (tile *Tile) heuristic(end *Tile) float64 {
-	return -math.Abs(float64(tile.position.x-end.position.x)) -
-		math.Abs(float64(tile.position.y-end.position.y))
+	return math.Sqrt(math.Pow(float64(tile.position.x-end.position.x), 2) +
+		math.Pow(float64(tile.position.y-end.position.y), 2))
+}
+
+func (tile *Tile) inSlice(slice []*Tile) bool {
+	for _, entity := range slice {
+		if tile == entity {
+			return true
+		}
+	}
+	return false
 }

@@ -12,8 +12,10 @@ type Game struct {
 	WINDOW_HEIGHT,
 	TILE_HEIGHT,
 	TILE_WIDTH int32
-	TILE_TEXTURE          *sdl.Texture
-	SELECTED_TILE_TEXTURE *sdl.Texture
+	BASIC_TILE_TEXTURE,
+	GRASSY_TILE_TEXTURE,
+	SELECTED_TILE_TEXTURE,
+	PLAYER_TILE_TEXTURE *sdl.Texture
 
 	window   *sdl.Window
 	renderer *sdl.Renderer
@@ -39,10 +41,14 @@ func InitializeGame() *Game {
 	}
 
 	game.WINDOW_WIDTH, game.WINDOW_HEIGHT = game.window.GetSize()
-	game.TILE_TEXTURE, _ = img.LoadTexture(game.renderer, "./res/img/tile.png")
-	game.TILE_TEXTURE.SetColorMod(148, 169, 255)
+	game.BASIC_TILE_TEXTURE, _ = img.LoadTexture(game.renderer, "./res/img/tile.png")
+	game.BASIC_TILE_TEXTURE.SetColorMod(148, 169, 255)
+	game.GRASSY_TILE_TEXTURE, _ = img.LoadTexture(game.renderer, "./res/img/tile.png")
+	game.GRASSY_TILE_TEXTURE.SetColorMod(50, 130, 20)
 	game.SELECTED_TILE_TEXTURE, _ = img.LoadTexture(game.renderer, "./res/img/tile.png")
 	game.SELECTED_TILE_TEXTURE.SetColorMod(0, 0, 0)
+	game.PLAYER_TILE_TEXTURE, _ = img.LoadTexture(game.renderer, "./res/img/tile.png")
+	game.PLAYER_TILE_TEXTURE.SetColorMod(120, 0, 0)
 
 	return &game
 }

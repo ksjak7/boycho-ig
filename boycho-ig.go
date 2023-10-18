@@ -5,6 +5,7 @@ import (
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
 	"math"
+	"math/rand"
 	"os"
 	"runtime"
 	"time"
@@ -41,29 +42,31 @@ func main() {
 	var allTiles []*Tile
 	for i := -4; i < 5; i++ {
 		for j := -4; j < 5; j++ {
-			tile := createTile(int32(i), int32(j), game.TILE_TEXTURE, game)
-			allTiles = append(allTiles, &tile)
+			if rand.Int()%5 < 3 {
+				tile := createTile(int32(i), int32(j), game.BASIC_TILE_TEXTURE, 1, game)
+				allTiles = append(allTiles, &tile)
+			} else {
+				tile := createTile(int32(i), int32(j), game.GRASSY_TILE_TEXTURE, 2, game)
+				allTiles = append(allTiles, &tile)
+			}
 		}
 	}
+
+	centerTile := createTile(0, 0, game.PLAYER_TILE_TEXTURE, -1, game)
+
 	for _, entity := range allTiles {
 		for _, entityJ := range allTiles {
 			xDistance := int(math.Abs(float64(entity.position.x) - float64(entityJ.position.x)))
 			yDistance := int(math.Abs(float64(entity.position.y) - float64(entityJ.position.y)))
-			if entity != entityJ && !entity.withinAdjacentTiles(entityJ) && ((xDistance == 1 && yDistance == 0) || (xDistance == 0 && yDistance == 1)) {
-				fmt.Println(xDistance, " ", yDistance)
+			if entity != &centerTile && entity != entityJ && !entity.withinAdjacentTiles(entityJ) && ((xDistance == 1 && yDistance == 0) || (xDistance == 0 && yDistance == 1)) {
 				entity.adjacentTiles = append(entity.adjacentTiles, entityJ)
 			}
 		}
 		visibleEntities = append(visibleEntities, entity)
 	}
-	start, end := allTiles[0], allTiles[17]
-	parent, _ := shortestPath(start, end)
 
-	for end != nil {
-		end.texture = game.SELECTED_TILE_TEXTURE
-		end = parent[end]
-	}
-
+	var start, end *Tile
+	visibleEntities = append(visibleEntities, &centerTile)
 	running := true
 	for running {
 		startTime = time.Now()
@@ -79,16 +82,38 @@ func main() {
 						os.Exit(1)
 					}
 					if keyCode == sdl.K_a {
-
+						centerTile.move(-1, 0)
 					}
 					if keyCode == sdl.K_d {
-
+						centerTile.move(1, 0)
 					}
 					if keyCode == sdl.K_w {
-
+						centerTile.move(0, -1)
 					}
 					if keyCode == sdl.K_s {
+						centerTile.move(0, 1)
+					}
+					if keyCode == sdl.K_SPACE {
+						if start == nil {
+							for _, entity := range allTiles {
+								if entity.position == centerTile.position {
+									start = entity
+								}
+							}
+						} else {
+							for _, entity := range allTiles {
+								if entity.position == centerTile.position {
+									end = entity
+								}
+							}
 
+							parent, _ := shortestPath(start, end)
+							for end != nil {
+								end.texture = game.SELECTED_TILE_TEXTURE
+								end = parent[end]
+							}
+							start = nil
+						}
 					}
 				}
 				if t.State == sdl.RELEASED {
