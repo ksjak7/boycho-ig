@@ -17,6 +17,7 @@ type Game struct {
 	SELECTED_TILE_TEXTURE,
 	PLAYER_TILE_TEXTURE *sdl.Texture
 
+	camera   Position
 	window   *sdl.Window
 	renderer *sdl.Renderer
 	err      error
@@ -24,7 +25,7 @@ type Game struct {
 
 func InitializeGame() *Game {
 	game := Game{TILE_WIDTH: 168, TILE_HEIGHT: 54}
-	_, game.err = sdl.ShowCursor(0)
+	//_, game.err = sdl.ShowCursor(0)
 	if game.err != nil {
 		return nil
 	}
@@ -50,5 +51,6 @@ func InitializeGame() *Game {
 	game.PLAYER_TILE_TEXTURE, _ = img.LoadTexture(game.renderer, "./res/img/tile.png")
 	game.PLAYER_TILE_TEXTURE.SetColorMod(120, 0, 0)
 
+	game.camera = Position{0, 0}
 	return &game
 }

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 	"math"
 	"os"
+	"sort"
 )
 
 type Tile struct {
@@ -31,8 +31,8 @@ func (tile *Tile) render(renderer *sdl.Renderer, displayRect *sdl.Rect) {
 	if tile.texture == nil || renderer == nil {
 		os.Exit(5)
 	}
-	displayRect.X = tile.position.x*tile.width/2 + tile.position.y*tile.width/2 + (tile.game.WINDOW_WIDTH/2 - tile.width/2)
-	displayRect.Y = tile.position.y*tile.game.TILE_HEIGHT/2 - tile.position.x*tile.game.TILE_HEIGHT/2 + (tile.game.WINDOW_HEIGHT/2 - tile.height/2)
+	displayRect.X = tile.position.x*tile.width/2 + tile.position.y*tile.width/2 + (tile.game.WINDOW_WIDTH/2 - tile.width/2) - tile.game.camera.x
+	displayRect.Y = -(tile.position.y*tile.game.TILE_HEIGHT/2 - tile.position.x*tile.game.TILE_HEIGHT/2 + (tile.game.WINDOW_HEIGHT/2 - tile.height/2)) + tile.game.WINDOW_HEIGHT + tile.game.camera.y
 	displayRect.W = tile.width
 	displayRect.H = tile.height
 	err := renderer.Copy(tile.texture, nil, displayRect)
@@ -50,9 +50,12 @@ func shortestPath(start *Tile, end *Tile) (map[*Tile]*Tile, map[*Tile]float64) {
 	currentCost[start] = 0
 
 	for len(openList) > 0 {
+
+		sort.Slice(openList, func(i, j int) bool {
+			return openList[i].cost < openList[j].cost
+		})
 		current = openList[0]
 		openList = openList[1:]
-
 		if current == end {
 			return parent, currentCost
 		}
@@ -67,7 +70,6 @@ func shortestPath(start *Tile, end *Tile) (map[*Tile]*Tile, map[*Tile]float64) {
 				parent[child] = current
 			}
 		}
-		fmt.Println(len(openList))
 	}
 	return parent, currentCost
 }

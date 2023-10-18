@@ -46,7 +46,7 @@ func main() {
 				tile := createTile(int32(i), int32(j), game.BASIC_TILE_TEXTURE, 1, game)
 				allTiles = append(allTiles, &tile)
 			} else {
-				tile := createTile(int32(i), int32(j), game.GRASSY_TILE_TEXTURE, 2, game)
+				tile := createTile(int32(i), int32(j), game.GRASSY_TILE_TEXTURE, 1.001, game)
 				allTiles = append(allTiles, &tile)
 			}
 		}
@@ -79,19 +79,28 @@ func main() {
 
 				if t.State == sdl.PRESSED {
 					if keyCode == sdl.K_ESCAPE {
+						fmt.Println(centerTile.position)
 						os.Exit(1)
 					}
 					if keyCode == sdl.K_a {
 						centerTile.move(-1, 0)
+						game.camera.x -= game.TILE_WIDTH / 2
+						game.camera.y += game.TILE_HEIGHT / 2
 					}
 					if keyCode == sdl.K_d {
 						centerTile.move(1, 0)
+						game.camera.x += game.TILE_WIDTH / 2
+						game.camera.y -= game.TILE_HEIGHT / 2
 					}
 					if keyCode == sdl.K_w {
-						centerTile.move(0, -1)
+						centerTile.move(0, 1)
+						game.camera.x += game.TILE_WIDTH / 2
+						game.camera.y += game.TILE_HEIGHT / 2
 					}
 					if keyCode == sdl.K_s {
-						centerTile.move(0, 1)
+						centerTile.move(0, -1)
+						game.camera.x -= game.TILE_WIDTH / 2
+						game.camera.y -= game.TILE_HEIGHT / 2
 					}
 					if keyCode == sdl.K_SPACE {
 						if start == nil {
