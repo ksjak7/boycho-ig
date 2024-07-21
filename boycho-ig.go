@@ -42,7 +42,7 @@ func main() {
 	var allTiles []*Tile
 	for i := -4; i < 5; i++ {
 		for j := -4; j < 5; j++ {
-			if rand.Int()%5 < 3 {
+			if rand.Int()%5 < 4 {
 				tile := createTile(int32(i), int32(j), game.BASIC_TILE_TEXTURE, 1, game)
 				allTiles = append(allTiles, &tile)
 			} else {
